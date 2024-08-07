@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Startseite</title>
+    <link rel="stylesheet" href="/style/default.css">
+</head>
+<body>
+    <div id="importnavbar"></div>
+    <h1>Wer ist den dieser Mensch?</h1>
+    <h2>Ich bin Elija</h2>
+    <img src="/picture/elija.png" alt="Ein Bild von Elija">
+    <p>Vorname: Elija</p>
+    <p id="dynamic_age">Alter: ??</p>
+    <p>Was mag Ich: Programmieren, Jugendarbeit, Gott/Jesus, Hackerspace, Schlafen, Essen, Singen</p>
+    <p>Meine Stärken: Mitgefühl, Singen</p>
+    <p>Diese Programmiersprachen behersche ich (zumindestens so bisschen): Python, Javascript, (CSS), (HTML)</p>
+
+
+</body>
+</html>
+<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script>
+    $(function() {
+        $("#importnavbar").load("/template/navbar.html");
+    });
+    var date = new Date()
+    var birth = new Date(2009, 3, 14)
+    var age = date - birth
+    var age = Math.floor(age/31536000000)
+    document.getElementById("dynamic_age").innerHTML = "Alter: " + age
+</script>

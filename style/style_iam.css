@@ -1,0 +1,27 @@
+.outer-grid {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px; /* Vollständige Höhe des Viewports */
+}
+
+#grid {
+    display: grid;
+    grid-template-columns: repeat(3, 100px); /* 3 Spalten mit 100px Breite */
+    grid-template-rows: repeat(3, 100px);    /* 3 Zeilen mit 100px Höhe */
+    gap: 10px; /* Abstand zwischen den Grid-Elementen */
+}
+
+.cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 24px;
+    border-radius: 5px;
+}
+img {
+    width: 100px;
+    height: 100px;
+}
