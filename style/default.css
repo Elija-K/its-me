@@ -1,0 +1,10 @@
+@font-face {
+    font-family: moderndos;
+    src: url(/font/ModernDOS/ModernDOS8x14.ttf);
+}
+html {
+    font-family: moderndos;
+    background-color: black;
+    color: green;
+    text-align: center;
+}
