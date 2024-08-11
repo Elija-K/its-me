@@ -9,8 +9,18 @@ html {
     text-align: center;
     text-transform: uppercase;
     font-size: 20px;
+    list-style-position: inside;
 }
 a:link, a:visited, a:hover {
     color: green;
     text-decoration: none;
+}
+body {
+    overflow: hidden;
+    border-right: 2px solid green; /* Simuliert einen Cursor */
+    white-space: nowrap;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
