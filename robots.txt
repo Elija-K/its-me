@@ -3,3 +3,4 @@ Disallow: /tutorial/
 Disallow: /template/
 Disallow: /static/
 Disallow: /archive/
+Disallow: /private/
