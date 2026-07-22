@@ -3,6 +3,22 @@
         <a href="/" style="text-decoration: none">Startseite</a> |
         <a href="/about-me" style="text-decoration: none">Über mich aber in krass</a> |
         <a href="/contact" style="text-decoration: none">Kontaktier mich!</a> |
-        <a href="/projects" style="text-decoration: none">Meine unzähligen Projekte</a>
+        <a href="/projects" style="text-decoration: none">Meine unzähligen Projekte</a> |
+        <a href="/login" style="text-decoration: none">Login Web-Admin</a> |
+        <div id="login">
+            <input class="field" id="nameField" type="text" placeholder="Username" autocomplete="off" />
+			<input class="field" id="passField" type="password" placeholder="Password" autocomplete="off" />
+			<button id="loginBtn" onclick="login()">Anmelden</button>
+        </div>
     </nav>
 </div>
+<script>
+    function login() {
+        const username = document.getElementById('nameField').value;
+        const password = document.getElementById('passField').value;
+
+        href = `mailto:admin@justsomeone.ch?subject=Ich%20wollte%20mich%20unerlaubterweise%20Anmelden&body=HAHA%2C%20Ich%20weiss%20auch%20nicht.%0A%0ADiese%20Login%20Daten%20habe%20ich%20verwendet%3A%0ABenutzername%3A%20${encodeURIComponent(username)}%0APasswort%3A%20${encodeURIComponent(password)}%0A%0ALG%0ADer%20Absender`
+    
+        document.location.href = href;
+    }
+</script>

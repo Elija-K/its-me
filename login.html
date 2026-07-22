@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Login-Page Web Admin</title>
+	<script>
+		document.documentElement.classList.add('js-enabled');
+	</script>
+    <link rel="stylesheet" href="/static/css/default.css" />
+	<style>
+		body {
+			display: none;
+		}
+
+		html.js-enabled body {
+			display: block;
+		}
+
+		* { box-sizing: border-box; }
+
+		.center {
+			position: absolute;
+			inset: 0;
+			display: grid;
+			place-items: center;
+			pointer-events: none;
+		}
+
+		.panel {
+			width: min(92vw, 420px);
+			padding: 28px;
+			border-radius: 24px;
+			background: rgba(23, 26, 33, 0.86);
+			border: 1px solid rgba(255,255,255,0.08);
+			box-shadow: 0 24px 80px rgba(0,0,0,0.45);
+			pointer-events: auto;
+			position: relative;
+		}
+
+		h1 {
+			margin: 0 0 8px;
+			font-size: 2rem;
+			letter-spacing: 0.02em;
+		}
+
+		p {
+			margin: 0 0 18px;
+			color: var(--muted);
+			line-height: 1.5;
+		}
+
+		.field {
+			display: block;
+			width: 100%;
+			margin: 12px 0;
+			padding: 14px 16px;
+			border: 1px solid rgba(255,255,255,0.12);
+			border-radius: 14px;
+			background: rgba(255,255,255,0.04);
+			color: var(--text);
+			outline: none;
+			transition: transform 80ms linear, border-color 120ms ease, box-shadow 120ms ease, left 120ms ease-out, top 120ms ease-out;
+			position: relative;
+			z-index: 1;
+		}
+
+		.field:focus {
+			border-color: rgba(124, 92, 255, 0.8);
+			box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.16);
+		}
+
+		.field.moved,
+		button.moved {
+			position: fixed;
+			z-index: 10;
+		}
+
+		.row {
+			display: flex;
+			gap: 12px;
+			margin-top: 8px;
+		}
+
+		button {
+			appearance: none;
+			border: 0;
+			border-radius: 14px;
+			padding: 14px 16px;
+			font-weight: 700;
+			color: white;
+			background: linear-gradient(135deg, var(--accent), var(--accent-2));
+			cursor: pointer;
+			transition: transform 80ms linear, left 120ms ease-out, top 120ms ease-out;
+			flex: 1;
+		}
+
+		.hint {
+			margin-top: 14px;
+			font-size: 0.92rem;
+			color: #c7cfda;
+			min-height: 1.2em;
+		}
+
+		.chaos {
+			position: fixed;
+			inset: 0;
+			pointer-events: none;
+			overflow: hidden;
+		}
+
+		.floating-msg {
+			position: absolute;
+			font-size: 0.85rem;
+			color: rgba(255,255,255,0.6);
+			user-select: none;
+			white-space: nowrap;
+		}
+	</style>
+</head>
+<body>
+	<div class="chaos" id="chaos"></div>
+	<div class="center">
+		<div class="panel" id="panel">
+			<h1>Login</h1>
+			<p>Melde dich hier ein um die Webseite zu bearbeiten.</p>
+			<input class="field" id="nameField" type="text" placeholder="Username" autocomplete="off" />
+			<input class="field" id="passField" type="password" placeholder="Password" autocomplete="off" />
+			<div class="row">
+				<button id="loginBtn">Anmelden</button>
+				<button id="resetBtn">Zurücksetzen</button>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		const hoverables = [...document.querySelectorAll('.field, button')];
+		// Ensure these elements are not reachable via the Tab key
+		hoverables.forEach(el => { el.tabIndex = -1; });
+		const panel = document.getElementById('panel');
+		const hint = document.getElementById('hint');
+		const chaos = document.getElementById('chaos');
+
+		let activated = false;
+		let mouseX = innerWidth / 2;
+		let mouseY = innerHeight / 2;
+		const wanderState = new WeakMap();
+
+		function spawnMessage(text) {
+			const el = document.createElement('div');
+			el.className = 'floating-msg';
+			el.textContent = text;
+			el.style.left = Math.random() * (innerWidth - 180) + 'px';
+			el.style.top = Math.random() * (innerHeight - 40) + 'px';
+			chaos.appendChild(el);
+			setTimeout(() => el.remove(), 1400);
+		}
+
+		function teleportAway(el) {
+			const r = el.getBoundingClientRect();
+			el.classList.add('moved');
+			el.style.width = r.width + 'px';
+			el.style.height = r.height + 'px';
+
+			const padding = 30;
+			const cursorClearance = 40;
+			const maxX = Math.max(padding, innerWidth - r.width - padding);
+			const maxY = Math.max(padding, innerHeight - r.height - padding);
+			const candidates = [
+				{ x: padding, y: padding },
+				{ x: maxX, y: padding },
+				{ x: padding, y: maxY },
+				{ x: maxX, y: maxY }
+			];
+
+			let best = candidates[0];
+			let bestScore = -Infinity;
+
+			candidates.forEach(candidate => {
+				const safeX = Math.max(padding, Math.min(candidate.x, maxX));
+				const safeY = Math.max(padding, Math.min(candidate.y, maxY));
+				const cx = safeX + r.width / 2;
+				const cy = safeY + r.height / 2;
+				const dx = cx - mouseX;
+				const dy = cy - mouseY;
+				const dist = Math.hypot(dx, dy);
+				const cursorEdgeClearance = Math.min(
+					Math.abs(safeX - mouseX),
+					Math.abs(safeY - mouseY),
+					Math.abs(safeX + r.width - mouseX),
+					Math.abs(safeY + r.height - mouseY)
+				);
+				const score = dist + cursorEdgeClearance * 0.6;
+				if (score > bestScore) {
+					bestScore = score;
+					best = { x: safeX, y: safeY };
+				}
+			});
+
+			if (Math.abs(best.x - mouseX) < cursorClearance && Math.abs(best.x + r.width - mouseX) < cursorClearance) {
+				best.x = Math.min(maxX, Math.max(padding, mouseX + cursorClearance));
+			}
+			if (Math.abs(best.y - mouseY) < cursorClearance && Math.abs(best.y + r.height - mouseY) < cursorClearance) {
+				best.y = Math.min(maxY, Math.max(padding, mouseY + cursorClearance));
+			}
+
+			el.style.left = best.x + 'px';
+			el.style.top = best.y + 'px';
+			el.style.transform = 'none';
+		}
+
+		function moveAway(el, force = 1, teleport = false) {
+			const r = el.getBoundingClientRect();
+			if (teleport) {
+				teleportAway(el);
+				return;
+			}
+
+			let state = wanderState.get(el);
+			if (!state) {
+				state = {
+					targetX: r.left,
+					targetY: r.top,
+					nextChange: 0
+				};
+				wanderState.set(el, state);
+			}
+
+			el.classList.add('moved');
+			el.style.width = r.width + 'px';
+			el.style.height = r.height + 'px';
+			const cx = r.left + r.width / 2;
+			const cy = r.top + r.height / 2;
+			const dx = cx - mouseX;
+			const dy = cy - mouseY;
+			const dist = Math.max(1, Math.hypot(dx, dy));
+			const now = performance.now();
+			const margin = 18;
+			const maxX = Math.max(margin, innerWidth - r.width - margin);
+			const maxY = Math.max(margin, innerHeight - r.height - margin);
+
+			if (now >= state.nextChange || Math.abs(r.left - state.targetX) < 8 && Math.abs(r.top - state.targetY) < 8) {
+				state.nextChange = now + 140 + Math.random() * 240;
+				const awayX = (dx / dist) * (70 + Math.random() * 150) * force;
+				const awayY = (dy / dist) * (70 + Math.random() * 150) * force;
+				const roamX = (Math.random() - 0.5) * (innerWidth * 0.35);
+				const roamY = (Math.random() - 0.5) * (innerHeight * 0.35);
+				state.targetX = Math.min(maxX, Math.max(margin, r.left + awayX + roamX));
+				state.targetY = Math.min(maxY, Math.max(margin, r.top + awayY + roamY));
+			}
+
+			const nx = r.left + (state.targetX - r.left) * 0.22;
+			const ny = r.top + (state.targetY - r.top) * 0.22;
+			el.style.left = nx + 'px';
+			el.style.top = ny + 'px';
+			el.style.transform = 'none';
+		}
+
+		function activate() {
+			if (activated) return;
+			activated = true;
+			hint.textContent = 'Activated. Good luck.';
+			spawnMessage('Too close.');
+			setInterval(() => {
+				hoverables.forEach(el => moveAway(el, 1 + Math.random() * 0.9));
+			}, 40);
+		}
+
+		document.addEventListener('mousemove', (e) => {
+			mouseX = e.clientX;
+			mouseY = e.clientY;
+
+			hoverables.forEach(el => {
+				const r = el.getBoundingClientRect();
+				const hit = mouseX >= r.left && mouseX <= r.right && mouseY >= r.top && mouseY <= r.bottom;
+				const proximity = Math.hypot((r.left + r.width / 2) - mouseX, (r.top + r.height / 2) - mouseY);
+				const closeToClick = mouseX >= r.left - 40 && mouseX <= r.right + 40 && mouseY >= r.top - 40 && mouseY <= r.bottom + 40;
+				if (hit) activate();
+				if (activated && closeToClick) moveAway(el, 2, true);
+				else if (activated || proximity < 180) moveAway(el, activated ? 1.5 : 1.0);
+			});
+		});
+
+		hoverables.forEach(el => {
+			el.addEventListener('mouseenter', () => {
+				activate();
+				moveAway(el, 1.8, true);
+			});
+		});
+
+		document.getElementById('loginBtn').addEventListener('click', () => {
+			hint.textContent = 'Nope.';
+			spawnMessage('Denied.');
+		});
+
+		document.getElementById('resetBtn').addEventListener('click', () => {
+			const fields = document.querySelectorAll('.field');
+			fields.forEach(f => { f.value = ''; });
+			hint.textContent = 'Reset. It will not help.';
+			spawnMessage('Reset?');
+		});
+
+		addEventListener('resize', () => {
+			hoverables.forEach(el => {
+				const r = el.getBoundingClientRect();
+				el.style.left = Math.min(innerWidth - r.width - 8, Math.max(8, r.left)) + 'px';
+				el.style.top = Math.min(innerHeight - r.height - 8, Math.max(8, r.top)) + 'px';
+			});
+		});
+	</script>
+</body>
+</html>
