@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Login-Page Web Admin</title>
+    <link rel="stylesheet" href="/static/css/" />
+	<style>
+
+		* { box-sizing: border-box; }
+
+		.center {
+			position: absolute;
+			inset: 0;
+			display: grid;
+			place-items: center;
+			pointer-events: none;
+		}
+
+		.panel {
+			width: min(92vw, 420px);
+			padding: 28px;
+			border-radius: 24px;
+			background: rgba(23, 26, 33, 0.86);
+			border: 1px solid rgba(255,255,255,0.08);
+			box-shadow: 0 24px 80px rgba(0,0,0,0.45);
+			pointer-events: auto;
+			position: relative;
+		}
+
+		h1 {
+			margin: 0 0 8px;
+			font-size: 2rem;
+			letter-spacing: 0.02em;
+		}
+
+		p {
+			margin: 0 0 18px;
+			color: var(--muted);
+			line-height: 1.5;
+		}
+
+		.field {
+			display: block;
+			width: 100%;
+			margin: 12px 0;
+			padding: 14px 16px;
+			border: 1px solid rgba(255,255,255,0.12);
+			border-radius: 14px;
+			background: rgba(255,255,255,0.04);
+			color: var(--text);
+			outline: none;
+			transition: transform 80ms linear, border-color 120ms ease, box-shadow 120ms ease, left 120ms ease-out, top 120ms ease-out;
+			position: relative;
+			z-index: 1;
+		}
+
+		.field:focus {
+			border-color: rgba(124, 92, 255, 0.8);
+			box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.16);
+		}
+
+		.field.moved,
+		button.moved {
+			position: fixed;
+			z-index: 10;
+		}
+
+		.row {
+			display: flex;
+			gap: 12px;
+			margin-top: 8px;
+		}
+
+		button {
+			appearance: none;
+			border: 0;
+			border-radius: 14px;
+			padding: 14px 16px;
+			font-weight: 700;
+			color: white;
+			background: linear-gradient(135deg, var(--accent), var(--accent-2));
+			cursor: pointer;
+			transition: transform 80ms linear, left 120ms ease-out, top 120ms ease-out;
+			flex: 1;
+		}
+
+		.hint {
+			margin-top: 14px;
+			font-size: 0.92rem;
+			color: #c7cfda;
+			min-height: 1.2em;
+		}
+
+		.chaos {
+			position: fixed;
+			inset: 0;
+			pointer-events: none;
+			overflow: hidden;
+		}
+
+		.floating-msg {
+			position: absolute;
+			font-size: 0.85rem;
+			color: rgba(255,255,255,0.6);
+			user-select: none;
+			white-space: nowrap;
+		}
+	</style>
+</head>
+<body>
+	<div class="chaos" id="chaos"></div>
+	<div class="center">
+		<div class="panel" id="panel">
+			<h1>Welcome Back</h1>
+			<p>Try to fill in the fields. The page does not want that.</p>
+			<input class="field" id="nameField" type="text" placeholder="Username" autocomplete="off" />
+			<input class="field" id="passField" type="password" placeholder="Password" autocomplete="off" />
+			<div class="row">
+				<button id="loginBtn">Login</button>
+				<button id="resetBtn">Reset</button>
+			</div>
+			<div class="hint" id="hint">Move the cursor near a field and watch it flee.</div>
+		</div>
+	</div>
+
+	<script>
+		const hoverables = [...document.querySelectorAll('.field, button')];
+		const panel = document.getElementById('panel');
+		const hint = document.getElementById('hint');
+		const chaos = document.getElementById('chaos');
+
+		let activated = false;
+		let mouseX = innerWidth / 2;
+		let mouseY = innerHeight / 2;
+
+		function spawnMessage(text) {
+			const el = document.createElement('div');
+			el.className = 'floating-msg';
+			el.textContent = text;
+			el.style.left = Math.random() * (innerWidth - 180) + 'px';
+			el.style.top = Math.random() * (innerHeight - 40) + 'px';
+			chaos.appendChild(el);
+			setTimeout(() => el.remove(), 1400);
+		}
+
+		function moveAway(el, force = 1) {
+			const r = el.getBoundingClientRect();
+			el.classList.add('moved');
+			el.style.width = r.width + 'px';
+			el.style.height = r.height + 'px';
+			const cx = r.left + r.width / 2;
+			const cy = r.top + r.height / 2;
+			const dx = cx - mouseX;
+			const dy = cy - mouseY;
+			const dist = Math.max(1, Math.hypot(dx, dy));
+			const push = Math.max(60, 260 / dist) * force;
+			const nx = Math.min(innerWidth - r.width - 8, Math.max(8, r.left + (dx / dist) * push));
+			const ny = Math.min(innerHeight - r.height - 8, Math.max(8, r.top + (dy / dist) * push));
+			el.style.left = nx + 'px';
+			el.style.top = ny + 'px';
+			el.style.transform = 'none';
+		}
+
+		function activate() {
+			if (activated) return;
+			activated = true;
+			hint.textContent = 'Activated. Good luck.';
+			spawnMessage('Too close.');
+			setInterval(() => {
+				hoverables.forEach(el => moveAway(el, 1.1 + Math.random() * 0.6));
+			}, 40);
+		}
+
+		document.addEventListener('mousemove', (e) => {
+			mouseX = e.clientX;
+			mouseY = e.clientY;
+
+			hoverables.forEach(el => {
+				const r = el.getBoundingClientRect();
+				const hit = mouseX >= r.left && mouseX <= r.right && mouseY >= r.top && mouseY <= r.bottom;
+				const proximity = Math.hypot((r.left + r.width / 2) - mouseX, (r.top + r.height / 2) - mouseY);
+				if (hit) activate();
+				if (activated || proximity < 180) moveAway(el, activated ? 1.5 : 1.0);
+			});
+		});
+
+		hoverables.forEach(el => {
+			el.addEventListener('mouseenter', () => {
+				activate();
+				moveAway(el, 1.8);
+			});
+		});
+
+		document.getElementById('loginBtn').addEventListener('click', () => {
+			hint.textContent = 'Nope.';
+			spawnMessage('Denied.');
+		});
+
+		document.getElementById('resetBtn').addEventListener('click', () => {
+			const fields = document.querySelectorAll('.field');
+			fields.forEach(f => { f.value = ''; });
+			hint.textContent = 'Reset. It will not help.';
+			spawnMessage('Reset?');
+		});
+
+		addEventListener('resize', () => {
+			hoverables.forEach(el => {
+				const r = el.getBoundingClientRect();
+				el.style.left = Math.min(innerWidth - r.width - 8, Math.max(8, r.left)) + 'px';
+				el.style.top = Math.min(innerHeight - r.height - 8, Math.max(8, r.top)) + 'px';
+			});
+		});
+	</script>
+</body>
+</html>
